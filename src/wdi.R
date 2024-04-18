@@ -19,19 +19,18 @@ library(ggplot2)  # for creating graphs
 
 library(patchwork) # To display 2 charts together
 library(hrbrthemes)
+library(RColorBrewer) # for the color palette
 
 # Packages
 library(car)
-library(RColorBrewer) # for the color palette
 library(geomtextpath)
 
 # dirs
 dir_drive <- 'G:/.shortcut-targets-by-id/18yX-16J7W2Kyq4Mn3YbU_HTjslZyr4hE/IPBES Task Force Knowledge and Data/_DATA/_TSU Internal/_ Weekly reports/Files - Yanina/TfC/paradoxes_CH1'
-dir_git <- 'C:/Users/yanis/Documents/scripts/IPBES_TSU-DATA/TfC/paradoxes_CH1/Data'
+dir_git <- 'C:/Users/yanis/Documents/scripts/IPBES-Data/IPBES_TCA_ch1'
 
 
 #### Paradox Governments almost everywhere pay people more to exploit nature than to protect it----
-### data----
 
 # environemntal harmful subsidies
 ehs= read_csv(file.path(dir_git, 'IMF/Fossil_Fuel_Subsidies.csv'))
@@ -176,12 +175,12 @@ ggplot(sub_global, aes(x=year)) +
 
 
 
-#### Paradox increased international treaties and biodiversity decline----
-### data----
-treaties= read_csv(file.path(dir_git, 'ourworldindata/number-of-parties-env-agreements.csv'))
+#### Increased participation in international treaties but maintained biodiversity decline----
+
+treaties= read_csv(file.path(dir_git, 'data/ourworldindata/number-of-parties-env-agreements.csv'))
 treaties$max_parties = apply(treaties[,4:16], 1, max)#max across rows
 treaties = treaties %>% 
-  mutate(perc_max_parties = max_parties*100/206)#max across rows
+  mutate(perc_max_parties = max_parties*100/206)#percentage out of 193 countries + 2 non-UN memeber states + 11 territories
 names(treaties)
 world_treaties <- ggplot(treaties, aes(x=Year, y=perc_max_parties)) +
   geom_line(color="#69b3a2", size=2) +
@@ -189,7 +188,7 @@ world_treaties <- ggplot(treaties, aes(x=Year, y=perc_max_parties)) +
   theme_ipsum()
 world_treaties
 
-lpi= read_csv(file.path(dir_git, 'ourworldindata/living-planet-index-by-region.csv'))
+lpi= read_csv(file.path(dir_git, 'data/ourworldindata/living-planet-index-by-region.csv'))
 lpi = filter(lpi, Entity == 'World')
 names(lpi)
 world_lpi <- ggplot(lpi, aes(x=Year, y=living_planet_index_average)) +
@@ -199,59 +198,17 @@ world_lpi <- ggplot(lpi, aes(x=Year, y=living_planet_index_average)) +
 world_lpi
 world_treaties + world_lpi
 
-## Display both charts together
-
+# Join datasets to display them together
 treaties_lpi = lpi %>% 
-  left_join(treaties, by = 'Year') %>% 
+  inner_join(treaties, by = 'Year') %>% 
   dplyr::select(Year, perc_max_parties, living_planet_index_average )
 
-# Adding a second Y axis with sec.axis(): the idea
-# sec.axis() does not allow to build an entirely new Y axis. It just builds a second Y axis 
-# based on the first one, applying a mathematical transformation.
-
-# Start with a usual ggplot2 call:
-ggplot(treaties_lpi, aes(x=Year, y=perc_max_parties)) +
-  
-  # Custom the Y scales:
-  scale_y_continuous(
-    
-    # Features of the first axis
-    name = "First Axis",
-    
-    # Add a second axis and specify its features
-    sec.axis = sec_axis( trans=~.*1, name="Second Axis")
-  ) +
-  
-  theme_ipsum()
-#Show 2 series on the same line chart thanks to sec.axis()
-# We can use this sec.axis mathematical transformation to display 2 series that have a different range.
+## Adding a second Y axis----
+# sec.axis() which builds a second Y axis based on the first one, applying a mathematical transformation.
 
 # Value used to transform the data
 coeff <- 1
 
-ggplot(treaties_lpi, aes(x=Year)) +
-  
-  geom_line( aes(y=perc_max_parties)) + 
-  geom_line( aes(y=living_planet_index_average / coeff)) + 
-  
-  scale_y_continuous(
-    
-    # Features of the first axis
-    name = "First Axis",
-    
-    # Add a second axis and specify its features
-    sec.axis = sec_axis(~.*coeff, name="Second Axis")
-  )
-
-# Dual Y axis customization with ggplot2
-# A few usual tricks to make the chart looks better:
-
-# ipsum theme to remove the black background and improve the general style, add a title, customize the Y axes to pair them with their related line.
-
-# Value used to transform the data
-coeff <- 1
-
-# A few constants
 temperatureColor <- "#69b3a2"
 priceColor <- rgb(0.2, 0.6, 0.9, 1)
 
@@ -277,6 +234,19 @@ ggplot(treaties_lpi, aes(x=Year)) +
   ) +
   
   ggtitle("Decline in biodiversity and increased participation in MEAs")
+
+## Keep one Y axis----
+
+ggplot(treaties_lpi, aes(x = Year)) + 
+  geom_line(aes(y = perc_max_parties, colour = "Participation in Multilateral Environmental Agreements\n(percentage of parties)"), size=2) + 
+  geom_line(aes(y = living_planet_index_average, colour = "Average change in monitored wildlife populations \n(Living Planet Index)"), size=2) +
+  labs(x = NULL, y = NULL, color = NULL) +
+  theme_ipsum() +
+  theme(legend.position="bottom") +
+  annotate("text", x = 2010, y = 75, label = "Maximum of 197 parties \nacross agreements", color = 'black',size = 3) +
+  geom_segment(aes(x = 2015, y = 95.6, xend = 2010, yend = 85), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm"))) +
+  annotate("text", x = 2005, y = 15, label = "Wildlife populations have declined\nby ~60% between 1970 and 2014", color = 'black', size = 3) +
+  geom_segment(aes(x = 2015, y = 30, xend = 2010, yend = 25), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm")))
 
 
 #### Paradox #3----
