@@ -1,1 +1,9 @@
 IPBES_xxx_Chy_project_template.code-workspace
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data
+output/output_old
+*.shp
+*.gpkg
