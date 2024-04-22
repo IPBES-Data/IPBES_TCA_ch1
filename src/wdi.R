@@ -30,11 +30,14 @@ dir_drive <- 'G:/.shortcut-targets-by-id/18yX-16J7W2Kyq4Mn3YbU_HTjslZyr4hE/IPBES
 dir_git <- 'C:/Users/yanis/Documents/scripts/IPBES-Data/IPBES_TCA_ch1'
 
 
-#### Paradox Governments almost everywhere pay people more to exploit nature than to protect it----
+# Fig 1.3: The difference between explicit environmentally harmful subsidies and environmental expenditures----
 
 # environemntal harmful subsidies
-ehs= read_csv(file.path(dir_git, 'IMF/Fossil_Fuel_Subsidies.csv'))
+ehs= read_csv(file.path(dir_git, 'data/IMF/Fossil_Fuel_Subsidies.csv'))
 names(ehs)
+
+source = ehs %>% distinct(Source)
+
 #ehs %>% distinct(ISO3) %>% View()
 ehs_global = ehs %>% 
   filter(Unit =='Percent of GDP') %>% # USD at constant 2021 prices
@@ -50,19 +53,13 @@ ehs_global = ehs %>%
 #write_csv(ehs_global,file.path(dir_git, 'IMF/Fossil_Fuel_Subsidies_YS.csv'))
 names(ehs_global)
 
-ehs_global_gr <- ggplot(ehs_global, aes(x=year, y=`Explicit`)) +
-  geom_line(color="#69b3a2", size=2) +
-  ggtitle("Explicit EHS (mean % GDP)") +
-  theme_ipsum()
-ehs_global_gr
-
-
 # environmental  subsidies
-es = read_csv(file.path(dir_git, 'IMF/Environmental_Protection_Expenditures.csv'))
+es = read_csv(file.path(dir_git, 'data/IMF/Environmental_Protection_Expenditures.csv'))
 names(es)
 es %>% distinct(CTS_Name)
 es %>% distinct(CTS_Full_Descriptor)
 #es %>% distinct(ISO3) %>% View()
+source = es %>% distinct(Source)
 es_global = es %>% 
   filter(Unit =='Percent of GDP') %>% # USD at constant 2021 prices
   filter(CTS_Name =='Environmental Protection Expenditures') %>% 
@@ -78,6 +75,14 @@ es_global = es %>%
   mutate(year = as.numeric(year))
 names(es_global)
 #es_global %>% distinct(CTS_Name)
+
+### plot----
+ehs_global_gr <- ggplot(ehs_global, aes(x=year, y=`Explicit`)) +
+  geom_line(color="#69b3a2", size=2) +
+  ggtitle("Explicit EHS (mean % GDP)") +
+  theme_ipsum()
+ehs_global_gr
+
 es_global_gr <- ggplot(es_global, aes(x=year, y=`Environmental Protection Expenditures`)) +
   geom_line(color="#69b3a2", size=2) +
   ggtitle("Total Environmental Expenditures (mean % GDP)") +
@@ -86,11 +91,53 @@ es_global_gr
 
 ehs_global_gr + es_global_gr
 
+# Join data to plot together
 ehs_es = left_join(es_global, ehs_global, by = 'year')
 names(ehs_es)
 ehs_es = ehs_es %>% 
   mutate(dif = Explicit/`Environmental Protection Expenditures`) %>% 
   filter(!is.na(Explicit))
+
+ggplot(ehs_es, aes(x = year)) + 
+  geom_line(aes(y = `Environmental Protection Expenditures`, colour = "Total Environmental Expenditures"), size=1.5, linetype = "dashed") + 
+  geom_line(aes(y = `Explicit`, colour = "Explicit Environmentally Harmful Subsidies"), size=1.5) +
+  labs(x = NULL, y = 'Mean % GDP', color = NULL) +
+  theme_ipsum() +
+  theme(legend.position="bottom") +
+  geom_vline(xintercept=2017,linetype=3, size = 1) + 
+  scale_colour_grey() +
+  ylim(0,2) +
+  annotate("text", x = 2017, y = 2, label = "Projected data", color = 'black',size = 3, hjust = -0.1)
+#  geom_segment(aes(x = 2015, y = 95.6, xend = 2010, yend = 85), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm"))) +
+# annotate("text", x = 2005, y = 15, label = "Wildlife populations have declined\nby ~60% between 1970 and 2014", color = 'black', size = 3) +
+# geom_segment(aes(x = 2015, y = 30, xend = 2010, yend = 25), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm")))
+
+# calculate year mean and CIs; and data to plot together
+
+ehs_es_2017 = ehs_es %>% 
+  filter(year <= 2017) %>% 
+  pivot
+  t() %>% as.data.frame() %>%
+  tibble::rownames_to_column("xyz")
+
+ehs_es_2017 = ehs_es %>% 
+  filter(year <= 2017) %>% 
+  select(-year) %>% 
+  mutate(mean_epe_2017 = mean(`Environmental Protection Expenditures`)) %>% 
+  mutate(mean_ehs_2017 = mean(`Explicit`)) %>% 
+  mutate(sd_epe_2017 = sd(`Environmental Protection Expenditures`)) %>% 
+  mutate(sd_ehs_2017 = sd(`Explicit`)) %>% 
+  mutate(expend = c('epe', 'eeh'))
+  distinct(mean_epe_2017, .keep_all = TRUE) %>% 
+  t() %>% as.data.frame()
+  
+
+# Most basic error bar
+ggplot(ehs_es) +
+  geom_bar( aes(x=V1, y= mean_epe_2017), stat="identity", fill="skyblue", alpha=0.7) +
+  geom_errorbar( aes(x=V1, ymin=mean_epe_2017-sd_epe_2017, ymax=mean_epe_2017-sd_epe_2017), width=0.4, colour="orange", alpha=0.9, size=1.3)
+
+
 
 ## Display both charts together
 sub_global = es_global %>% 
@@ -175,35 +222,52 @@ ggplot(sub_global, aes(x=year)) +
 
 
 
-#### Increased participation in international treaties but maintained biodiversity decline----
+# Fig 1.1: Increased participation in international treaties but maintained biodiversity decline----
 
+# Load data 
 treaties= read_csv(file.path(dir_git, 'data/ourworldindata/number-of-parties-env-agreements.csv'))
+
+# calc Max numer of parties across MEAs
 treaties$max_parties = apply(treaties[,4:16], 1, max)#max across rows
+
+# Calc percentage to match LPI 
 treaties = treaties %>% 
   mutate(perc_max_parties = max_parties*100/206)#percentage out of 193 countries + 2 non-UN memeber states + 11 territories
 names(treaties)
+
+# plot
 world_treaties <- ggplot(treaties, aes(x=Year, y=perc_max_parties)) +
   geom_line(color="#69b3a2", size=2) +
   ggtitle("Percentage parties in MEA") +
   theme_ipsum()
 world_treaties
 
-lpi= read_csv(file.path(dir_git, 'data/ourworldindata/living-planet-index-by-region.csv'))
-lpi = filter(lpi, Entity == 'World')
+# load LPI data
+# lpi= read_csv(file.path(dir_git, 'data/ourworldindata/living-planet-index-by-region.csv'))
+# lpi = filter(lpi, Entity == 'World')
+# names(lpi)
+
+lpi= read_csv(file.path(dir_git, 'data/LPI/Global.csv'))
+lpi = lpi %>% 
+  mutate(percent = 100) %>% 
+  mutate(across(LPI_final:CI_high, ~ .*percent))
 names(lpi)
+
+# plot
 world_lpi <- ggplot(lpi, aes(x=Year, y=living_planet_index_average)) +
   geom_line(color="#1E91D6", size=2) +
   ggtitle("Average decline in monitored wildlife populations (LPI)") +
   theme_ipsum()
 world_lpi
+
 world_treaties + world_lpi
 
 # Join datasets to display them together
 treaties_lpi = lpi %>% 
   inner_join(treaties, by = 'Year') %>% 
-  dplyr::select(Year, perc_max_parties, living_planet_index_average )
+  dplyr::select(Year, perc_max_parties, LPI_final, CI_low, CI_high )
 
-## Adding a second Y axis----
+### Plot with 2 Y axis ----
 # sec.axis() which builds a second Y axis based on the first one, applying a mathematical transformation.
 
 # Value used to transform the data
@@ -235,11 +299,38 @@ ggplot(treaties_lpi, aes(x=Year)) +
   
   ggtitle("Decline in biodiversity and increased participation in MEAs")
 
-## Keep one Y axis----
+### Plot with one Y axis----
 
 ggplot(treaties_lpi, aes(x = Year)) + 
+  geom_line(aes(y = perc_max_parties, colour = "Percentage of countries in \nMultilateral Environmental Agreements (in %)"), size=1.5, linetype = "dashed") + 
+  geom_line(aes(y = LPI_final, colour = "Average change in monitored wildlife populations \n(Living Planet Index, in %)"), size=1.5) +
+  geom_line(aes(y=CI_low),linetype="dotted", size = 1) + 
+  geom_line(aes(y=CI_high),linetype="dotted", size = 1)+
+  labs(x = NULL, y = NULL, color = NULL) +
+  theme_ipsum() +
+  theme(legend.position="bottom") +
+  #scale_color_manual(values = rep("black", 20)) +
+  scale_colour_grey() +
+  annotate("text", x = 2016, y = 31.62, label = "LPI", color = 'black',size = 3) +
+  annotate("text", x = 2017, y = 26.28, label = "Lower CI", color = 'black',size = 3) +
+  annotate("text", x = 2017, y = 38.06, label = "Upper CI", color = 'black',size = 3)
+
+  # annotate("text", x = 2010, y = 75, label = "Maximum of 197 parties \nacross agreements", color = 'black',size = 3) +
+  # geom_segment(aes(x = 2015, y = 95.6, xend = 2010, yend = 85), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm"))) +
+  # annotate("text", x = 2005, y = 15, label = "Wildlife populations have declined\nby ~60% between 1970 and 2014", color = 'black', size = 3) +
+  # geom_segment(aes(x = 2015, y = 30, xend = 2010, yend = 25), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm")))
+
+# Load Human modification layer
+lcc = read_csv('C:/Users/yanis/Documents/IPBES/human_modification_indic/anthrome_change/fraccover_classbased_100/global_lc_change.csv')
+
+# Join datasets to display them together
+treaties_lcc = lcc %>% 
+  inner_join(treaties, by = c( 'year' = 'Year')) %>% 
+  dplyr::select(Year = year, perc_max_parties, urban_mean, agri_mean, anthropo_mean, forest_mean )
+
+ggplot(treaties_lcc, aes(x = Year)) + 
   geom_line(aes(y = perc_max_parties, colour = "Participation in Multilateral Environmental Agreements\n(percentage of parties)"), size=2) + 
-  geom_line(aes(y = living_planet_index_average, colour = "Average change in monitored wildlife populations \n(Living Planet Index)"), size=2) +
+  geom_line(aes(y = anthropo_mean, colour = "Average change in forest cover"), size=2) +
   labs(x = NULL, y = NULL, color = NULL) +
   theme_ipsum() +
   theme(legend.position="bottom") +
@@ -248,10 +339,9 @@ ggplot(treaties_lpi, aes(x = Year)) +
   annotate("text", x = 2005, y = 15, label = "Wildlife populations have declined\nby ~60% between 1970 and 2014", color = 'black', size = 3) +
   geom_segment(aes(x = 2015, y = 30, xend = 2010, yend = 25), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm")))
 
-
-#### Paradox #3----
+# Fig 1.2: Difference between Gross National Income and adjusted National Income growth (nature depletion)----
 ### data----
-data = read_csv(file.path(dir_git,'paradox_3/world_data/ece4cf76-ad92-440b-bf09-14b1e143bf24_Data.csv'))
+data = read_csv(file.path(dir_git,'data/paradox_3/world_data/ece4cf76-ad92-440b-bf09-14b1e143bf24_Data.csv'))
 data = data[c(1:80),]
 data[,5:67]=sapply(data[,5:67],as.numeric)
 names(data)
@@ -334,96 +424,28 @@ high
 world + low + high
 
 ### Compare GNI and Adjusted NI----
+names(world_data)
 
-GNI <- ggplot(world_data, aes(x=year, y=`GNI_current_usd`)) +
-  geom_line(color="grey",size=2) +
-  ggtitle("GNI (current US$)") +
-  theme_ipsum()
-GNI
-
-AdjNI <- ggplot(world_data, aes(x=year, y=`Adjusted_net_national_income_current_usd`)) +
-  geom_line(color="grey",size=2) +
-  ggtitle("Adjusted net national income (current US$)") +
-  theme_ipsum()
-AdjNI
-
-## Display both charts side by side thanks to the patchwork package
-GNI + AdjNI
-
+world_data = world_data %>% 
+  mutate(GNI_2015usd_M = GNI_2015usd/1000000000) %>% 
+  mutate(Adjusted_net_national_income_2015usd_M = Adjusted_net_national_income_2015usd/1000000000) %>% 
+  mutate(GNI_current_usd_M = GNI_current_usd/1000000000) %>% 
+  mutate(Adjusted_net_national_income_current_usd_M = Adjusted_net_national_income_current_usd/1000000000)
 
 ## Display both charts together
-# Adding a second Y axis with sec.axis(): the idea
-# sec.axis() does not allow to build an entirely new Y axis. It just builds a second Y axis 
-# based on the first one, applying a mathematical transformation.
 
-# Start with a usual ggplot2 call:
-ggplot(world_data, aes(x=year, y=`GNI_current_usd`)) +
-  
-  # Custom the Y scales:
-  scale_y_continuous(
-    
-    # Features of the first axis
-    name = "First Axis",
-    
-    # Add a second axis and specify its features
-    sec.axis = sec_axis( trans=~.*1, name="Second Axis")
-  ) +
-  
-  theme_ipsum()
-#Show 2 series on the same line chart thanks to sec.axis()
-# We can use this sec.axis mathematical transformation to display 2 series that have a different range.
-
-# Value used to transform the data
-coeff <- 1
-
-ggplot(world_data, aes(x=year)) +
-  
-  geom_line( aes(y=GNI_current_usd)) + 
-  geom_line( aes(y=Adjusted_net_national_income_current_usd / coeff)) + # Divide by 10 to get the same range than the temperature
-  
-  scale_y_continuous(
-    
-    # Features of the first axis
-    name = "First Axis",
-    
-    # Add a second axis and specify its features
-    sec.axis = sec_axis(~.*coeff, name="Second Axis")
-  )
-
-# Dual Y axis customization with ggplot2
-# A few usual tricks to make the chart looks better:
-  
-# ipsum theme to remove the black background and improve the general style, add a title, customize the Y axes to pair them with their related line.
-
-# Value used to transform the data
-coeff <- 1
-
-# A few constants
-temperatureColor <- "#69b3a2"
-priceColor <- rgb(0.2, 0.6, 0.9, 1)
-
-ggplot(world_data, aes(x=year)) +
-  
-  geom_line( aes(y=GNI_current_usd), size=2, color=temperatureColor) + 
-  geom_line( aes(y=Adjusted_net_national_income_current_usd / coeff), size=2, color=priceColor) +
-  
-  scale_y_continuous(
-    
-    # Features of the first axis
-    name = "GNI (current US$)",
-    
-    # Add a second axis and specify its features
-    sec.axis = sec_axis(~.*coeff, name="Adjusted net national income (current US$)")
-  ) + 
-  
+ggplot(filter(world_data,!is.na(GNI_2015usd)) , aes(x = year)) + 
+#ggplot(world_data , aes(x = year)) + 
+  geom_line(aes(y = Adjusted_net_national_income_2015usd_M, colour = "Adjusted net national income \n(2015 US$)"), size=1.5, linetype = "dashed") + 
+  geom_line(aes(y = GNI_2015usd_M, colour = "Gross National Income \n(2015 US$)"), size=1.5) +
+  labs(x = NULL, y = NULL, color = NULL) +
   theme_ipsum() +
-  
-  theme(
-    axis.title.y = element_text(color = temperatureColor, size=13),
-    axis.title.y.right = element_text(color = priceColor, size=13)
-  ) +
-  
-  ggtitle("Difference between GNI and adjusted NI grows (nature depletion)")
+  theme(legend.position="bottom") +
+  scale_y_continuous(labels = function(x) paste0(x, " B")) + # Add percent sign 
+  #scale_color_manual(values = rep("black", 20)) +
+  scale_colour_grey() 
+
+
 
 #### Paradox #7----
 
