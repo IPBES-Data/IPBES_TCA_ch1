@@ -3,7 +3,15 @@ IPBES_xxx_Chy_project_template.code-workspace
 .Rhistory
 .RData
 .Ruserdata
-data
 output/output_old
+src/wdi.R
 *.shp
 *.gpkg
+*.docx
+data/IMF
+data/padadox_3
+data/paradox_7
+data/pdf
+data/shi
+data/the_world_bank
+

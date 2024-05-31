@@ -234,6 +234,7 @@ treaties$max_parties = apply(treaties[,4:16], 1, max)#max across rows
 treaties = treaties %>% 
   mutate(perc_max_parties = max_parties*100/206)#percentage out of 193 countries + 2 non-UN memeber states + 11 territories
 names(treaties)
+#write_csv(treaties,file.path(dir_git, 'data/ourworldindata/processed-parties-env-agreements.csv'))
 
 # plot
 world_treaties <- ggplot(treaties, aes(x=Year, y=perc_max_parties)) +
@@ -248,11 +249,11 @@ world_treaties
 # names(lpi)
 
 lpi= read_csv(file.path(dir_git, 'data/LPI/Global.csv'))
-lpi = lpi %>% 
+lpi2 = lpi %>% 
   mutate(percent = 100) %>% 
   mutate(across(LPI_final:CI_high, ~ .*percent))
 names(lpi)
-
+write_csv(lpi2, file.path(dir_git, 'data/LPI/Global_processed.csv'))
 # plot
 world_lpi <- ggplot(lpi, aes(x=Year, y=living_planet_index_average)) +
   geom_line(color="#1E91D6", size=2) +
