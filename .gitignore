@@ -9,7 +9,7 @@ src/wdi.R
 *.gpkg
 *.docx
 data/IMF
-data/padadox_3
+data/paradox_3
 data/paradox_7
 data/pdf
 data/shi

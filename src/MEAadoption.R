@@ -1,29 +1,16 @@
 rm(list=ls())
 
-# TFC assess
-# Paradoxes
+# TFC assess, Chapter I (support to figure)-----
 
-# librarues
+# libraries
 library(stringr)
-#library(data.table)
-#library(foreign)
 library(tidyverse)
 library(dplyr)
 library(readxl)
 library(readr)
 
-#library(lubridate) # for working with dates
-library(ggplot2)  # for creating graphs
-#library(scales)   # to access breaks/formatting functions
-#library(gridExtra) # for arranging plots
 
-# library(patchwork) # To display 2 charts together
-# library(hrbrthemes)
-# library(RColorBrewer) # for the color palette
-# 
-# # Packages
-# library(car)
-# library(geomtextpath)
+library(ggplot2)  # for creating graphs
 
 # dirs
 dir_git <- 'C:/Users/yanis/Documents/scripts/IPBES-Data/IPBES_TCA_ch1'
@@ -31,49 +18,61 @@ dir_git <- 'C:/Users/yanis/Documents/scripts/IPBES-Data/IPBES_TCA_ch1'
 
 # Increased participation in international treaties but maintained biodiversity decline----
 
-## Load data 
+## Load data----
+
+### OWD----
 # Our World in Data (features figure 1.7 of the DEVELOPMENT AND GLOBALIZATION FACTS AND FIGURES 2016)
-owd_treaties= read_csv(file.path(dir_git, 'data/ourworldindata/number-of-parties-env-agreements.csv'))
+owd_treaties = read_csv(file.path(dir_git, 'data/ourworldindata/number-of-parties-env-agreements.csv'))
 owd_treaties$max_parties_OWD = apply(owd_treaties[,4:16], 1, max)#max across rows
 
 # Calc percentage 
 owd_treaties = owd_treaties %>% 
+  arrange(Year) %>% 
   mutate(perc_max_parties_OWD = max_parties_OWD*100/206)#percentage out of 193 countries + 2 non-UN memeber states + 11 territories
 names(owd_treaties)
-write_csv(owd_treaties,file.path(dir_git, 'data/ourworldindata/processed-parties-env-agreements.csv'))
+#write_csv(owd_treaties,file.path(dir_git, 'data/ourworldindata/processed-parties-env-agreements.csv'))
 
-# other conventions
+### Other conventions-----
 basel = read_xlsx(file.path(dir_git, 'data/other_conventions/basel.xlsx'), sheet = 'year')
 basel2 = basel %>% 
   mutate(year = if_else(is.na(year_sig),
                         true = year_prot,
                         false = year_sig)) %>% 
+  arrange(year) %>% 
   group_by(year) %>% 
-  summarize(basel = n())
+  summarize(basel = n()) %>% 
+  mutate(basel = cumsum(basel))
   
 ozone_montreal = read_xlsx(file.path(dir_git, 'data/other_conventions/ozone_montreal.xlsx'), sheet = 'year')
 ozone_montreal2 = ozone_montreal %>% 
   mutate(year = if_else(is.na(year_sig),
                         true = year_prot,
                         false = year_sig)) %>% 
+  arrange(year) %>% 
   group_by(year) %>% 
-  summarize(ozone_montreal = n())
+  summarize(ozone_montreal = n())%>% 
+  mutate(ozone_montreal = cumsum(ozone_montreal))
+
 minamata = read_xlsx(file.path(dir_git, 'data/other_conventions/minamata.xlsx'), sheet = 'year')
 minamata2 = minamata %>% 
   mutate(year = if_else(is.na(year_sig),
                         true = year_prot,
                         false = year_sig)) %>% 
+  arrange(year) %>% 
   group_by(year) %>% 
-  summarize(minamata = n())
+  summarize(minamata = n())%>% 
+  mutate(minamata = cumsum(minamata))
 
 nagoya = read_xlsx(file.path(dir_git, 'data/other_conventions/nagoya.xlsx'), sheet = 'year')
 nagoya2 = nagoya %>% 
   mutate(year = if_else(is.na(year_sig),
                         true = year_prot,
                         false = year_sig)) %>% 
+  arrange(year) %>% 
   filter(!is.na(year)) %>% 
   group_by(year) %>% 
-  summarize(nagoya = n())
+  summarize(nagoya = n())%>% 
+  mutate(nagoya = cumsum(nagoya))
 
 
 paris = read_xlsx(file.path(dir_git, 'data/other_conventions/paris_agree.xlsx'), sheet = 'year')
@@ -81,25 +80,48 @@ paris2 = paris %>%
   mutate(year = if_else(is.na(year_sig),
                         true = year_prot,
                         false = year_sig)) %>% 
+  arrange(year) %>% 
   group_by(year) %>% 
-  summarize(paris = n())
+  summarize(paris = n())%>% 
+  mutate(paris = cumsum(paris))
 
 UNCLOS = read_xlsx(file.path(dir_git, 'data/other_conventions/UNCLOS.xlsx'), sheet = 'year')
 UNCLOS2 = UNCLOS %>% 
   mutate(year = if_else(is.na(year_sig),
                         true = year_prot,
                         false = year_sig)) %>% 
+  arrange(year) %>% 
   filter(!is.na(year)) %>% 
   group_by(year) %>% 
-  summarize(UNCLOS = n())
+  summarize(UNCLOS = n())%>% 
+  mutate(UNCLOS = cumsum(UNCLOS))
+
 UNECE = read_xlsx(file.path(dir_git, 'data/other_conventions/UNECE.xlsx'), sheet = 'year')
 UNECE2 = UNECE %>% 
+  arrange(year) %>% 
   group_by(year) %>% 
-  summarize(UNECE = n())
+  summarize(UNECE = n())%>% 
+  mutate(UNECE = cumsum(UNECE))
+
 africa = read_xlsx(file.path(dir_git, 'data/other_conventions/africa_conservation.xlsx'), sheet = 'year')
 africa2 = africa %>% 
+  mutate(year = if_else(is.na(year_sign),
+                        true = year_prot,
+                        false = year_sign)) %>% 
+  arrange(year) %>% 
+  filter(!is.na(year)) %>% 
   group_by(year) %>% 
-  summarize(africa = n())
+  summarize(africa = n())%>% 
+  mutate(africa = cumsum(africa))
+
+antar = read_xlsx(file.path(dir_git, 'data/other_conventions/antarctic.xlsx'), sheet = 'country-year')
+antar2 = antar %>% 
+  filter(!is.na(year_prot)) %>% 
+  arrange(year_prot) %>% 
+  group_by(year_prot) %>% 
+  summarize(antart = n()) %>% 
+  rename(year = year_prot)%>% 
+  mutate(antart = cumsum(antart))
 
 #join other conventions
 
@@ -110,28 +132,29 @@ other_treaties = basel2 %>%
   full_join(paris2, by = 'year') %>% 
   full_join(UNCLOS2, by = 'year') %>% 
   full_join(UNECE2, by = 'year') %>% 
+  full_join(africa2, by = 'year') %>% 
+  full_join(antar2, by = 'year') %>% 
   mutate(across(.cols = everything(), \(x) replace_na(x, 0))) %>% 
-  mutate(across(.cols = everything(), \(x) as.numeric(x))) 
+  mutate(across(.cols = everything(), \(x) as.numeric(x))) %>% 
+  arrange(year)
 
 
-
-# join OWD with other conventions
+# Join all conventions
 all_treaties = other_treaties %>% 
   full_join(owd_treaties, by = c('year'='Year')) %>% 
-  dplyr::select(-Entity, -Code)
-all_treaties$max_parties = apply(all_treaties[,2:21], 1, max)#max across rows
+  dplyr::select(-Entity, -Code) %>% 
+  mutate(across(.cols = everything(), \(x) replace_na(x, 0))) %>% 
+  mutate(across(.cols = everything(), \(x) as.numeric(x))) %>% 
+  arrange(year)
+
+
+all_treaties$max_parties = apply(all_treaties[,2:23], 1, max)#max across rows
 all_treaties$perc_max_parties = all_treaties$max_parties*100/206 #percentage out of 193 countries + 2 non-UN memeber states + 11 territories
+
 write_csv(all_treaties,file.path(dir_git, '/outputs/all-processed-parties-env-agreements.csv'))
+#all_treaties = read_csv(file.path(dir_git, '/outputs/all-processed-parties-env-agreements.csv'))
 
-
-# plot
-world_treaties <- ggplot(owd_treaties, aes(x=Year, y=perc_max_parties)) +
-  geom_line(color="#69b3a2", size=2) +
-  ggtitle("Percentage parties in MEA") +
-  theme_ipsum()
-world_treaties
-
-## Living Planet Index ()
+### Living Planet Index-----
 lpi= read_csv(file.path(dir_git, 'data/LPI/Global.csv'))
 lpi2 = lpi %>% 
   mutate(percent = 100) %>% 
@@ -139,19 +162,28 @@ lpi2 = lpi %>%
 names(lpi)
 write_csv(lpi2, file.path(dir_git, 'data/LPI/Global_processed.csv'))
 
+# Plot-----
+ggplot(all_treaties, aes(x=year, y=perc_max_parties_all)) +
+  geom_line(color="#69b3a2", linewidth=2) +
+  ggtitle("Percentage parties in MEA (all data)")
+
+
+ggplot(owd_treaties, aes(x=Year, y=perc_max_parties_OWD)) +
+  geom_line(color="#69b3a2", linewidth=2) +
+  ggtitle("Percentage parties in MEA (Our World in Data)")
+
+
 # plot
-world_lpi <- ggplot(lpi, aes(x=Year, y=living_planet_index_average)) +
+world_lpi <- ggplot(lpi, aes(x=Year, y=LPI_final)) +
   geom_line(color="#1E91D6", size=2) +
-  ggtitle("Average decline in monitored wildlife populations (LPI)") +
-  theme_ipsum()
+  ggtitle("Average decline in monitored wildlife populations (LPI)") 
 world_lpi
 
-world_treaties + world_lpi
 
 # Join datasets to display them together
-treaties_lpi = lpi %>% 
-  inner_join(treaties, by = 'Year') %>% 
-  dplyr::select(Year, perc_max_parties, LPI_final, CI_low, CI_high )
+treaties_lpi = lpi2 %>% 
+  inner_join(all_treaties, by = c('Year'='year')) %>% 
+  dplyr::select(Year, perc_max_parties_all, LPI_final, CI_low, CI_high )
 
 ### Plot with 2 Y axis ----
 # sec.axis() which builds a second Y axis based on the first one, applying a mathematical transformation.
@@ -164,8 +196,8 @@ priceColor <- rgb(0.2, 0.6, 0.9, 1)
 
 ggplot(treaties_lpi, aes(x=Year)) +
   
-  geom_line( aes(y=perc_max_parties), size=2, color=temperatureColor) + 
-  geom_line( aes(y=living_planet_index_average / coeff), size=2, color=priceColor) +
+  geom_line( aes(y=perc_max_parties_all), size=2, color=temperatureColor) + 
+  geom_line( aes(y=LPI_final / coeff), size=2, color=priceColor) +
   
   scale_y_continuous(
     
@@ -175,8 +207,6 @@ ggplot(treaties_lpi, aes(x=Year)) +
     # Add a second axis and specify its features
     sec.axis = sec_axis(~.*coeff, name="Average change in monitored wildlife populations (LPI)")
   ) + 
-  
-  theme_ipsum() +
   
   theme(
     axis.title.y = element_text(color = temperatureColor, size=13),
@@ -188,18 +218,18 @@ ggplot(treaties_lpi, aes(x=Year)) +
 ### Plot with one Y axis----
 
 ggplot(treaties_lpi, aes(x = Year)) + 
-  geom_line(aes(y = perc_max_parties, colour = "Percentage of countries in \nMultilateral Environmental Agreements (in %)"), size=1.5, linetype = "dashed") + 
+  geom_line(aes(y = perc_max_parties_all, colour = "Percentage of countries in \nMultilateral Environmental Agreements (in %)"), size=1.5, linetype = "dashed") + 
   geom_line(aes(y = LPI_final, colour = "Average change in monitored wildlife populations \n(Living Planet Index, in %)"), size=1.5) +
   geom_line(aes(y=CI_low),linetype="dotted", size = 1) + 
   geom_line(aes(y=CI_high),linetype="dotted", size = 1)+
   labs(x = NULL, y = NULL, color = NULL) +
-  theme_ipsum() +
+  #theme_ipsum() +
   theme(legend.position="bottom") +
   #scale_color_manual(values = rep("black", 20)) +
   scale_colour_grey() +
-  annotate("text", x = 2016, y = 31.62, label = "LPI", color = 'black',size = 3) +
-  annotate("text", x = 2017, y = 26.28, label = "Lower CI", color = 'black',size = 3) +
-  annotate("text", x = 2017, y = 38.06, label = "Upper CI", color = 'black',size = 3)
+  annotate("text", x = 2016, y = 34, label = "LPI", color = 'black',size = 3) +
+  annotate("text", x = 2017, y = 29, label = "Lower CI", color = 'black',size = 3) +
+  annotate("text", x = 2017, y = 40, label = "Upper CI", color = 'black',size = 3)
 
   # annotate("text", x = 2010, y = 75, label = "Maximum of 197 parties \nacross agreements", color = 'black',size = 3) +
   # geom_segment(aes(x = 2015, y = 95.6, xend = 2010, yend = 85), colour='black', size=0.5, arrow = arrow(length = unit(0.08, "cm"))) +
