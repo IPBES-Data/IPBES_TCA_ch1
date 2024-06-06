@@ -153,7 +153,7 @@ all_treaties$perc_max_parties = all_treaties$max_parties*100/206 #percentage out
 
 write_csv(all_treaties,file.path(dir_git, '/outputs/all-processed-parties-env-agreements.csv'))
 #all_treaties = read_csv(file.path(dir_git, '/outputs/all-processed-parties-env-agreements.csv'))
-
+names(all_treaties)
 ### Living Planet Index-----
 lpi= read_csv(file.path(dir_git, 'data/LPI/Global.csv'))
 lpi2 = lpi %>% 
