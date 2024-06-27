@@ -1,10 +1,7 @@
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
-
 # PARTIES PARTICIPATION IN MULTILATERAL ENVIRONMENTAL AGREEMENTS
 
-This repository is part of an ongoing IPBES project.
+This repository is part of a larger figure in Chapter 1 of the Transformative Change assessment.
 
 The authors do not take any responsibility for it's content or the correct working of the code. If scripts in here wipe your data, you are on your own.
 
