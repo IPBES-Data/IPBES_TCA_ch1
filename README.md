@@ -13,9 +13,9 @@ Once finalised, the final repo will be published on Zenodo
 
 ## Metadata
 
-- **Project name**: %Parties in MEAs%
-- **Assessment**: %TCA%
-- **Chapter**: %CHAPTER 1%
+- **Project name**: Parties in MEAs
+- **Assessment**: TCA
+- **Chapter**: CHAPTER 1
 
 ## Folders
 
@@ -23,12 +23,3 @@ Once finalised, the final repo will be published on Zenodo
 - **`outputs`**: figures or other outputs created during the running of the code` file in low-res as well as high-res.
 - **`src`**: R scripts used to run the code in the repo. Files in this folder will be sourced initially.
 
-
-
-
-## Status
-- ...
-
-
-## Reports
-- [Example Report](Report.html)
